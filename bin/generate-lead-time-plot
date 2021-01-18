@@ -1,0 +1,86 @@
+#!/bin/bash
+
+while getopts "a:d:s:p:t:o:h" arg; do
+  case $arg in
+    a) app="$OPTARG" ;;
+    s) start="$OPTARG" ;;
+    p) stop="$OPTARG" ;;
+    t) team="$OPTARG" ;;
+    o) output="$OPTARG" ;;
+    d) output_dir="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ -z "$app" ]]; then
+  echo "ERROR: App must be specified using -a" >&2
+  exit 1
+fi
+
+if [[ -z "$output" ]]; then
+  output=plot
+fi
+
+if [[ -z "$start" ]]; then
+  start="2020-07-01"
+fi
+
+if [[ -z "$stop" ]]; then
+  stop="2020-12-31"
+fi
+
+if [[ -z "$output_dir" ]]; then
+  output_dir=output
+fi
+
+mkdir -p $output_dir
+
+plot_file=/tmp/plot.gp
+
+cat >"$plot_file" <<EOF
+set xdata time
+set timefmt '"%Y-%m-%d"'
+set xlabel "Date"
+set xrange ['"$start"':'"$stop"']
+set ylabel "p50 Lead Time (days)"
+set terminal png
+set xtics rotate by -45
+set output "$output_dir/$output.png"
+set format x "%m/%d"
+plot "$output_dir/$output.dat" using 1:2 w lp title 'p50', \
+             "" using 1:3 w lp title 'rolling p50', \
+             "" using 1:4 w lp title 'p75', \
+             "" using 1:5 w lp title 'rolling p75'
+EOF
+
+p50=.stats.p50Minutes
+rp50=.rollingStats.p50Minutes
+p75=.stats.p75Minutes
+rp75=.rollingStats.p75Minutes
+
+set -x
+if [[ -n "$team" ]]; then
+  curl --silent --get 'http://localhost:8080/leadTime' \
+    -d "start=$start" \
+    -d "stop=$stop" \
+    -d fill=false \
+    -d repoName=$app \
+    --data-urlencode "team=$team" | jq '.' > "$output_dir/$output".json
+else
+  curl --silent --get 'http://localhost:8080/leadTime' \
+    -d "start=$start" \
+    -d "stop=$stop" \
+    -d fill=false \
+    -d repoName=$app | jq '.' > "$output_dir/$output".json
+fi
+
+jq ".data | .[] | select($p50 != null) | [.date, $p50 / 60 / 24, $rp50 / 60 / 24, $p75 / 60 / 24, $rp75 / 60 / 24] | @csv" "$output_dir/$output".json \
+  | sed -e 's/^"//' -e 's/"$//' \
+  | tr -d '\\' \
+  | tr ',' ' '  > "$output_dir/$output".dat
+
+gnuplot $plot_file
+rm -f "$plot_file"
+echo  "Created $output files at $output_dir"
+ls -al "$output_dir"/$output*

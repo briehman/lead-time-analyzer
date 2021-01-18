@@ -1,0 +1,19 @@
+#!/bin/bash
+
+cd "$(dirname $0)"/..
+
+APP_NAME="${1?Must provide app name as first argument}"
+APP_DIR="${2?Must provide path to app git directory as argument}"
+BRANCH="${3:-master}"
+USES_TEAMS="${4:-false}"
+
+if [[ ! -d "$APP_DIR" ]]; then
+  echo "ERROR: App directory does not exist at $APP_DIR" >&2
+  exit 2
+fi
+
+set -eux
+rm -rf db
+./gradlew clean compileJava
+./gradlew createRepo --args="$APP_NAME $APP_DIR/.git $BRANCH $USES_TEAMS"
+./gradlew loadData --args="$APP_NAME"

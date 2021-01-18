@@ -1,0 +1,8 @@
+/.gradle
+/.idea
+/build
+/backend.pid
+/db
+/log
+/output
+/src/main/resources/application-jira.properties

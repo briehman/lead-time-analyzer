@@ -1,0 +1,66 @@
+plugins {
+  id 'org.springframework.boot' version '2.1.5.RELEASE'
+  id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.briehman'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 11
+targetCompatibility = 11
+
+if (project.hasProperty("args")) {
+    ext.cmdargs = project.getProperty("args")
+} else {
+    ext.cmdargs = ""
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://packages.atlassian.com/maven/repository/public"
+    }
+}
+
+springBoot {
+    mainClassName = "com.briehman.leadtimeanalyzer.LeadTimeAnalyzerApplication"
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'com.atlassian.jira:jira-rest-java-client-core:5.2.0'
+  implementation 'io.atlassian.fugue:fugue:4.7.2'
+  compile 'com.h2database:h2'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  compile 'org.eclipse.jgit:org.eclipse.jgit:5.3.1.201904271842-r'
+  compile 'org.apache.commons:commons-math3:3.6.1'
+  compile 'com.google.code.findbugs:jsr305:3.0.2'
+}
+
+task createRepo(type: JavaExec) {
+    description = "Create new repository"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.briehman.leadtimeanalyzer.CodeRepositoryCreatorApplication'
+}
+
+task loadData(type: JavaExec) {
+    description = "Load application repo data"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.briehman.leadtimeanalyzer.DataLoaderApplication'
+}
+
+task generateWeeklySummary(type: JavaExec) {
+    description = "Produce a weekly summary of details"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.briehman.leadtimeanalyzer.WeeklySummaryApplication'
+    args cmdargs.split()
+}
+
+task backend(type: JavaExec) {
+    description = "Run the analyzer backend"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.briehman.leadtimeanalyzer.LeadTimeAnalyzerApplication'
+}
