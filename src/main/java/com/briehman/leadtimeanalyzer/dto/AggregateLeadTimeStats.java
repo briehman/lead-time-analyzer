@@ -60,11 +60,11 @@ public class AggregateLeadTimeStats extends LeadTimeStats {
     }
 
     public String statusString() {
-        return "p25Days=" + minutesToDays(p25Minutes) +
-                ", p50Days=" + minutesToDays(p50Minutes) +
-                ", p75Days=" + minutesToDays(p75Minutes) +
-                ", p90Days=" + minutesToDays(p90Minutes) +
-                ", p99Days=" + minutesToDays(p99Minutes);
+        return "p25=" + minutesToDays(p25Minutes) +
+                ", p50=" + minutesToDays(p50Minutes) +
+                ", p75=" + minutesToDays(p75Minutes) +
+                ", p90=" + minutesToDays(p90Minutes) +
+                ", p99=" + minutesToDays(p99Minutes);
     }
 
     private static String minutesToDays(Double mins) {
