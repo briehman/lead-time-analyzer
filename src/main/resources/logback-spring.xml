@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <include resource="org/springframework/boot/logging/logback/base.xml"/>
-  <!-- <include resource="org/springframework/boot/logging/logback/defaults.xml" /> -->
-  <!-- <include resource="org/springframework/boot/logging/logback/console-appender.xml" /> -->
 
-  <springProfile name="weekly-summary">
-    <logger name="org.springframework" level="ERROR" />
-    <logger name="org.hibernate" level="ERROR" />
-  </springProfile>
+  <logger name="org.springframework" level="ERROR" />
+  <logger name="org.hibernate" level="ERROR" />
 
   <root level="ERROR">
     <appender-ref ref="CONSOLE"/>
