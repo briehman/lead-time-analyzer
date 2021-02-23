@@ -15,13 +15,14 @@ import io.atlassian.util.concurrent.Promise;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 /**
@@ -36,18 +37,18 @@ public class TeamAssigner {
     public static final int PARTITION_SIZE = 500;
 
     private final TeamRepository teamRepository;
-    private final JiraRestClient restClient;
+    private final Supplier<JiraRestClient> restClientSupplier;
     private final MergeRepository mergeRepository;
-    private final String assignedTeamFieldId;
+    private final Supplier<String> assignedTeamFieldIdSupplier;
 
     @Autowired
-    public TeamAssigner(TeamRepository teamRepository, JiraRestClient restClient,
+    public TeamAssigner(TeamRepository teamRepository, Supplier<JiraRestClient> restClientSupplier,
             MergeRepository mergeRepository,
-            @Value("${jira.assigned_team_custom_field}") String assignedTeamFieldId) {
+            Environment environment) {
         this.teamRepository = teamRepository;
-        this.restClient = restClient;
+        this.restClientSupplier = restClientSupplier;
         this.mergeRepository = mergeRepository;
-        this.assignedTeamFieldId = assignedTeamFieldId;
+        this.assignedTeamFieldIdSupplier = () -> environment.getProperty("jira.assigned_team_custom_field");
     }
 
     public void assignTeams(CodeRepository repo) {
@@ -56,6 +57,8 @@ public class TeamAssigner {
         if (noTeamMerges.isEmpty()) {
             return;
         }
+
+        String assignedTeamFieldId = assignedTeamFieldIdSupplier.get();
 
         for (List<Merge> group : Lists.partition(noTeamMerges, PARTITION_SIZE)) {
             String keys = group.stream()
@@ -68,7 +71,7 @@ public class TeamAssigner {
             Set<String> searchFields = Set
                     .of("key", assignedTeamFieldId, "summary", "issuetype", "created",
                             "updated", "project", "status");
-            Promise<SearchResult> searchResultPromise = restClient.getSearchClient()
+            Promise<SearchResult> searchResultPromise = restClientSupplier.get().getSearchClient()
                     .searchJql("key IN (" + keys + ")", PARTITION_SIZE, 0, searchFields);
 
             for (Issue issue : searchResultPromise.claim().getIssues()) {
