@@ -71,3 +71,7 @@ task weeklySummary(type: JavaExec) {
     main = 'com.briehman.leadtimeanalyzer.WeeklySummaryApplication'
     args cmdargs.split()
 }
+
+bootJar {
+  archiveFileName = 'lead-time-analyzer.jar'
+}
