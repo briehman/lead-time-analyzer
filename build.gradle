@@ -64,3 +64,10 @@ task backend(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.briehman.leadtimeanalyzer.LeadTimeAnalyzerApplication'
 }
+
+task weeklySummary(type: JavaExec) {
+    description = "Run the summary backend"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.briehman.leadtimeanalyzer.WeeklySummaryApplication'
+    args cmdargs.split()
+}
